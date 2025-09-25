@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Kalkulator Modern dengan Konversi Uang</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden; /* Mencegah scroll bar */
+      position: relative;
+      background-color: #000; /* Background hitam */
+    }
+    
+    /* Background AI Hitungan */
+    .ai-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      overflow: hidden;
+    }
+    
+    .math-symbol {
+      position: absolute;
+      color: rgba(0, 255, 170, 0.7); /* Warna hijau neon untuk simbol */
+      font-family: 'Courier New', monospace;
+      font-size: 16px;
+      animation: fall linear infinite;
+      text-shadow: 0 0 5px rgba(0, 255, 170, 0.5);
+    }
+    
+    .ai-code {
+      position: absolute;
+      color: rgba(138, 43, 226, 0.7); /* Warna ungu neon untuk kode AI */
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      animation: fall linear infinite;
+      text-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+    }
+    
+    .binary {
+      position: absolute;
+      color: rgba(0, 191, 255, 0.5); /* Warna biru neon untuk binary */
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      animation: fall linear infinite;
+      text-shadow: 0 0 5px rgba(0, 191, 255, 0.5);
+    }
+    
+    @keyframes fall {
+      0% {
+        transform: translateY(-100px);
+        opacity: 0;
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(calc(100vh + 100px));
+        opacity: 0;
+      }
+    }
+    
+    /* Container untuk kalkulator dan musik */
+    .app-container {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    .calculator {
+      width: 240px; /* Dikurangi dari 280px */
+      border-radius: 12px; /* Dikurangi dari 15px */
+      padding: 12px; /* Dikurangi dari 15px */
+      background: rgba(30, 30, 40, 0.9); /* Background gelap dengan transparansi */
+      box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px); /* Efek blur untuk glassmorphism */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+
+    .display {
+      width: 100%;
+      height: 40px; /* Dikurangi dari 50px */
+      margin-bottom: 10px; /* Dikurangi dari 12px */
+      text-align: right;
+      padding: 6px; /* Dikurangi dari 8px */
+      font-size: 16px; /* Dikurangi dari 20px */
+      border-radius: 6px; /* Dikurangi dari 8px */
+      border: 1px solid #444;
+      background: rgba(255, 255, 255, 0.9); /* Tambahkan transparansi */
+      color: #333;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 6px; /* Dikurangi dari 8px */
+    }
+
+    .button {
+      padding: 10px; /* Dikurangi dari 12px */
+      text-align: center;
+      font-size: 14px; /* Dikurangi dari 16px */
+      cursor: pointer;
+      background-color: rgba(60, 60, 70, 0.9); /* Background gelap dengan transparansi */
+      color: #fff;
+      border-radius: 6px; /* Dikurangi dari 8px */
+      transition: 0.2s;
+      user-select: none;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .button:hover { 
+      background-color: rgba(80, 80, 90, 0.9);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .button.special { 
+      background-color: rgba(255, 112, 67, 0.9); 
+      color: #fff; 
+    }
+    .button.special:hover { 
+      background-color: rgba(230, 74, 25, 0.9); 
+    }
+    .button.operator { 
+      background-color: rgba(66, 165, 245, 0.9); 
+      color: #fff; 
+    }
+    .button.operator:hover { 
+      background-color: rgba(30, 136, 229, 0.9); 
+    }
+    .button.danger { 
+      background-color: rgba(239, 83, 80, 0.9); 
+      color: #fff; 
+    }
+    .button.danger:hover { 
+      background-color: rgba(198, 40, 40, 0.9); 
+    }
+
+    /* Riwayat */
+    .toggle-history {
+      margin-top: 8px; /* Dikurangi dari 10px */
+      padding: 6px; /* Dikurangi dari 8px */
+      background: rgba(70, 70, 80, 0.9);
+      color: #ffffff;
+      border-radius: 6px; /* Dikurangi dari 8px */
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 12px; /* Dikurangi dari 14px */
+    }
+    .toggle-history:hover { 
+      background: rgba(198, 40, 40, 0.9);
+      transform: translateY(-2px);
+    }
+
+    .history {
+      display: none;
+      margin-top: 8px; /* Dikurangi dari 12px */
+      max-height: 120px; /* Dikurangi dari 150px */
+      overflow-y: auto;
+      background: rgba(50, 50, 60, 0.9);
+      border-radius: 6px; /* Dikurangi dari 8px */
+      padding: 6px; /* Dikurangi dari 8px */
+      font-size: 10px; /* Dikurangi dari 12px */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .history h3 { 
+      margin: 0 0 4px 0; /* Dikurangi dari 6px */
+      font-size: 12px; /* Dikurangi dari 14px */
+      color: #fff; 
+    }
+    .history p { 
+      margin: 2px 0; /* Dikurangi dari 3px */
+      font-family: monospace; 
+      color: #ddd;
+      font-size: 9px; /* Dikurangi dari 11px */
+    }
+
+    .clear-history {
+      margin-top: 4px; /* Dikurangi dari 6px */
+      padding: 4px; /* Dikurangi dari 6px */
+      background: rgba(239, 83, 80, 0.9);
+      color: #fff;
+      border-radius: 4px; /* Dikurangi dari 6px */
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 10px; /* Dikurangi dari 12px */
+    }
+    .clear-history:hover { 
+      background: rgba(198, 40, 40, 0.9);
+      transform: translateY(-2px);
+    }
+
+    /* Konversi uang */
+    .convert-box {
+      margin-top: 8px; /* Dikurangi dari 12px */
+      background: rgba(50, 50, 60, 0.9);
+      padding: 6px; /* Dikurangi dari 8px */
+      border-radius: 6px; /* Dikurangi dari 8px */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .convert-box select, .convert-box button {
+      padding: 4px; /* Dikurangi dari 6px */
+      border-radius: 4px; /* Dikurangi dari 6px */
+      border: 1px solid #444;
+      margin: 2px 0; /* Dikurangi dari 3px */
+      font-size: 10px; /* Dikurangi dari 12px */
+      background: rgba(60, 60, 70, 0.8);
+      color: #fff;
+    }
+    .convert-box label {
+      font-size: 10px; /* Dikurangi dari 12px */
+      color: #fff;
+    }
+    .convert-box button {
+      background: rgba(66, 165, 245, 0.9);
+      color: #fff;
+      cursor: pointer;
+      border: none;
+    }
+    .convert-box button:hover {
+      background: rgba(30, 136, 229, 0.9);
+      transform: translateY(-2px);
+    }
+    
+    /* Sound Settings */
+    .sound-toggle {
+      margin-top: 8px; /* Dikurangi dari 10px */
+      padding: 4px; /* Dikurangi dari 6px */
+      background: rgba(70, 70, 80, 0.9);
+      color: #ffffff;
+      border-radius: 6px; /* Dikurangi dari 8px */
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 10px; /* Dikurangi dari 12px */
+    }
+    .sound-toggle:hover { 
+      background: rgba(90, 90, 100, 0.9);
+      transform: translateY(-2px);
+    }
+    .sound-toggle.active { 
+      background: rgba(76, 175, 80, 0.9); 
+    }
+    
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 30px; /* Dikurangi dari 36px */
+      height: 15px; /* Dikurangi dari 18px */
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #444;
+      transition: .4s;
+      border-radius: 15px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 10px; /* Dikurangi dari 12px */
+      width: 10px; /* Dikurangi dari 12px */
+      left: 2.5px;
+      bottom: 2.5px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: #4caf50;
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(15px); /* Dikurangi dari 18px */
+    }
+    
+    /* Music Box - Dipindahkan ke samping kanan */
+    .music-box {
+      width: 240px; /* Sama dengan lebar kalkulator */
+      border-radius: 12px; /* Sama dengan kalkulator */
+      padding: 12px; /* Sama dengan kalkulator */
+      background: rgba(30, 30, 40, 0.9); /* Background gelap dengan transparansi */
+      color: #fff;
+      backdrop-filter: blur(10px); /* Efek blur untuk glassmorphism */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .music-box h3 {
+      margin-top: 0;
+      margin-bottom: 10px; /* Dikurangi dari 12px */
+      text-align: center;
+      color: #fff;
+      font-size: 14px; /* Dikurangi dari ukuran default */
+    }
+    
+    .music-input {
+      display: flex;
+      margin-bottom: 6px; /* Dikurangi dari 8px */
+    }
+    
+    .music-input input {
+      flex: 1;
+      padding: 6px; /* Dikurangi dari 8px */
+      border-radius: 6px 0 0 6px;
+      border: 1px solid #444;
+      background: rgba(50, 50, 60, 0.8);
+      color: #fff;
+      border-right: none;
+      font-size: 12px; /* Dikurangi dari ukuran default */
+    }
+    
+    .music-input button {
+      padding: 6px 8px; /* Dikurangi dari 6px 10px */
+      background: rgba(66, 165, 245, 0.9);
+      color: #fff;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      font-size: 12px; /* Dikurangi dari ukuran default */
+    }
+    
+    .music-input button:hover {
+      background: rgba(30, 136, 229, 0.9);
+      transform: translateY(-2px);
+    }
+    
+    .music-platforms {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px; /* Dikurangi dari 8px */
+    }
+    
+    .platform-btn {
+      flex: 1;
+      margin: 0 2px;
+      padding: 4px; /* Dikurangi dari 5px */
+      background: rgba(60, 60, 70, 0.8);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 10px; /* Dikurangi dari 11px */
+    }
+    
+    .platform-btn:hover {
+      background: rgba(80, 80, 90, 0.8);
+      transform: translateY(-2px);
+    }
+    
+    .platform-btn.active {
+      background: rgba(66, 165, 245, 0.9);
+    }
+    
+    .music-player-container {
+      margin-top: 6px; /* Dikurangi dari 8px */
+      height: 140px; /* Dikurangi dari 160px */
+      border-radius: 6px; /* Dikurangi dari 8px */
+      overflow: hidden;
+      background: rgba(20, 20, 30, 0.8);
+      position: relative;
+    }
+    
+    .music-player-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    
+    .music-placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: #aaa;
+      font-size: 11px; /* Dikurangi dari 12px */
+      text-align: center;
+      padding: 10px; /* Dikurangi dari 15px */
+    }
+    
+    .error-message {
+      color: #ff5252;
+      font-size: 9px; /* Dikurangi dari 11px */
+      margin-top: 3px; /* Dikurangi dari 4px */
+      display: none;
+    }
+    
+    .music-info {
+      margin-top: 6px; /* Dikurangi dari 8px */
+      font-size: 9px; /* Dikurangi dari 11px */
+      color: #aaa;
+      text-align: center;
+    }
+    
+    /* Sound Activation Modal */
+    .sound-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .sound-modal-content {
+      background-color: rgba(40, 40, 50, 0.95);
+      padding: 12px; /* Dikurangi dari 15px */
+      border-radius: 8px; /* Dikurangi dari 10px */
+      text-align: center;
+      max-width: 240px; /* Dikurangi dari 280px */
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .sound-modal-content h3 {
+      margin-top: 0;
+      color: #fff;
+      font-size: 14px; /* Dikurangi dari 16px */
+    }
+    
+    .sound-modal-content p {
+      margin-bottom: 12px; /* Dikurangi dari 15px */
+      color: #ddd;
+      font-size: 11px; /* Dikurangi dari 13px */
+    }
+    
+    .sound-modal-button {
+      padding: 6px 12px; /* Dikurangi dari 8px 16px */
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px; /* Dikurangi dari 5px */
+      cursor: pointer;
+      font-size: 12px; /* Dikurangi dari 14px */
+    }
+    
+    .sound-modal-button:hover {
+      background-color: #388e3c;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background AI Hitungan -->
+  <div class="ai-background" id="aiBackground"></div>
+
+  <div class="app-container">
+    <div class="calculator">
+      <input type="text" class="display" id="display" disabled>
+      
+      <div class="buttons">
+        <div class="button danger" onclick="clearDisplay(); speak('hapus')">C</div>
+        <div class="button operator" onclick="appendToDisplay('%'); speak('persen')">%</div>
+        <div class="button danger" onclick="backspace(); speak('hapus')">⌫</div>
+        <div class="button operator" onclick="appendToDisplay('/'); speak('bagi')">÷</div>
+
+        <div class="button" onclick="appendToDisplay('7'); speak('tujuh')">7</div>
+        <div class="button" onclick="appendToDisplay('8'); speak('delapan')">8</div>
+        <div class="button" onclick="appendToDisplay('9'); speak('sembilan')">9</div>
+        <div class="button operator" onclick="appendToDisplay('*'); speak('kali')">×</div>
+
+        <div class="button" onclick="appendToDisplay('4'); speak('empat')">4</div>
+        <div class="button" onclick="appendToDisplay('5'); speak('lima')">5</div>
+        <div class="button" onclick="appendToDisplay('6'); speak('enam')">6</div>
+        <div class="button operator" onclick="appendToDisplay('-'); speak('kurang')">−</div>
+
+        <div class="button" onclick="appendToDisplay('1'); speak('satu')">1</div>
+        <div class="button" onclick="appendToDisplay('2'); speak('dua')">2</div>
+        <div class="button" onclick="appendToDisplay('3'); speak('tiga')">3</div>
+        <div class="button operator" onclick="appendToDisplay('+'); speak('tambah')">+</div>
+
+        <div class="button" onclick="appendToDisplay('0'); speak('nol')">0</div>
+        <div class="button" onclick="appendToDisplay('.'); speak('koma')">.</div>
+        <div class="button special" onclick="calculate(); speak('sama dengan')">=</div>
+      </div>
+
+      <!-- Konversi Uang -->
+      <div class="convert-box">
+        <label for="from">From:</label>
+        <select id="from">
+          <option value="IDR">IDR</option>
+          <option value="USD">USD</option>
+          <option value="RM">RM</option>
+        </select>
+        <br>
+        <label for="to">To:</label>
+        <select id="to">
+          <option value="USD">USD</option>
+          <option value="IDR">IDR</option>
+          <option value="RM">RM</option>
+        </select>
+        <br>
+        <button onclick="convertCurrency(); speak('konversi')">Convert</button>
+      </div>
+
+      <div class="toggle-history" onclick="toggleHistory(); speak('riwayat')">History</div>
+      <div class="history" id="historyBox">
+        <h3>History</h3>
+        <div id="historyList"></div>
+        <div class="clear-history" onclick="clearHistory(); speak('hapus riwayat')">Clear</div>
+      </div>
+
+      <!-- Sound Toggle -->
+      <div class="sound-toggle" id="soundToggle">
+        <span>Sound</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="soundSwitch" checked>
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Music Box - Dipindahkan ke samping kanan -->
+    <div class="music-box">
+      <h3>Music Box</h3>
+      
+      <div class="music-platforms">
+        <button class="platform-btn active" onclick="setPlatform('spotify')">Spotify</button>
+        <button class="platform-btn" onclick="setPlatform('youtube')">YouTube</button>
+        <button class="platform-btn" onclick="setPlatform('soundcloud')">SoundCloud</button>
+      </div>
+      
+      <div class="music-input">
+        <input type="text" id="musicUrl" placeholder="Enter URL">
+        <button onclick="loadMusic()">Load</button>
+      </div>
+      
+      <div class="error-message" id="musicError"></div>
+      
+      <div class="music-player-container" id="musicPlayer">
+        <div class="music-placeholder">
+          Enter URL to play music
+        </div>
+      </div>
+      
+      <div class="music-info">
+        <p>Spotify, YouTube, SoundCloud</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sound Activation Modal -->
+  <div class="sound-modal" id="soundModal">
+    <div class="sound-modal-content">
+      <h3>Aktifkan Suara</h3>
+      <p>Klik tombol di bawah untuk mengaktifkan suara pada kalkulator</p>
+      <button class="sound-modal-button" onclick="activateSound()">Aktifkan Suara</button>
+    </div>
+  </div>
+
+  <script>
+    let display = document.getElementById("display");
+    let historyBox = document.getElementById("historyBox");
+    let historyList = document.getElementById("historyList");
+    let musicError = document.getElementById("musicError");
+    let musicPlayer = document.getElementById("musicPlayer");
+    let musicUrl = document.getElementById("musicUrl");
+    let currentPlatform = 'spotify';
+    let soundEnabled = false;
+    let soundSwitch = document.getElementById("soundSwitch");
+    let soundToggle = document.getElementById("soundToggle");
+    let soundModal = document.getElementById("soundModal");
+    let soundActivated = false;
+    let rawDisplayValue = ""; // Nilai asli tanpa format
+    let currentCurrency = "IDR"; // Mata uang yang sedang aktif
+    let isAfterCalculation = false; // Flag untuk menandai setelah perhitungan
+
+    // Show sound modal on page load
+    window.addEventListener('load', function() {
+      soundModal.style.display = 'flex';
+      createAIBackground();
+    });
+
+    // Create AI Background with math symbols and code
+    function createAIBackground() {
+      const background = document.getElementById('aiBackground');
+      
+      // Math symbols
+      const mathSymbols = ['∑', '∏', '∫', '∆', '∇', '∂', '∞', '√', 'π', 'θ', 'α', 'β', 'γ', 'λ', 'μ', 'σ', 'φ', 'ψ', 'ω', '∈', '∉', '⊂', '⊃', '∪', '∩', '∀', '∃', '∅', '≡', '≈', '≠', '≤', '≥', '×', '÷', '±', '∓', '⋅', '∘'];
+      
+      // AI and programming terms
+      const aiTerms = ['AI', 'ML', 'DL', 'NLP', 'CNN', 'RNN', 'GPT', 'BERT', 'TensorFlow', 'PyTorch', 'Neural Network', 'Algorithm', 'Data Science', 'Big Data', 'Cloud', 'API', 'JSON', 'XML', 'HTML', 'CSS', 'JS', 'Python', 'Java', 'C++', 'SQL', 'NoSQL', 'Git', 'Docker', 'Kubernetes'];
+      
+      // Binary code
+      const binaryDigits = ['0', '1'];
+      
+      // Create math symbols
+      for (let i = 0; i < 30; i++) {
+        createFallingElement(background, mathSymbols[Math.floor(Math.random() * mathSymbols.length)], 'math-symbol');
+      }
+      
+      // Create AI terms
+      for (let i = 0; i < 20; i++) {
+        createFallingElement(background, aiTerms[Math.floor(Math.random() * aiTerms.length)], 'ai-code');
+      }
+      
+      // Create binary code
+      for (let i = 0; i < 50; i++) {
+        let binaryString = '';
+        for (let j = 0; j < 10; j++) {
+          binaryString += binaryDigits[Math.floor(Math.random() * binaryDigits.length)];
+        }
+        createFallingElement(background, binaryString, 'binary');
+      }
+    }
+    
+    // Create falling elements
+    function createFallingElement(container, text, className) {
+      const element = document.createElement('div');
+      element.className = className;
+      element.textContent = text;
+      
+      // Random position along the x-axis
+      const posX = Math.random() * window.innerWidth;
+      element.style.left = `${posX}px`;
+      
+      // Random animation duration between 10s and 20s
+      const duration = Math.random() * 10 + 10;
+      element.style.animationDuration = `${duration}s`;
+      
+      // Random delay
+      const delay = Math.random() * 5;
+      element.style.animationDelay = `${delay}s`;
+      
+      container.appendChild(element);
+      
+      // Remove element after animation completes and create a new one
+      setTimeout(() => {
+        element.remove();
+        createFallingElement(container, text, className);
+      }, (duration + delay) * 1000);
+    }
+
+    // Sound toggle event
+    soundSwitch.addEventListener('change', function() {
+      soundEnabled = this.checked;
+      if (soundEnabled) {
+        soundToggle.classList.add('active');
+        if (soundActivated) {
+          speak('suara diaktifkan');
+        }
+      } else {
+        soundToggle.classList.remove('active');
+      }
+    });
+
+    function activateSound() {
+      soundModal.style.display = 'none';
+      soundActivated = true;
+      soundEnabled = true;
+      soundSwitch.checked = true;
+      soundToggle.classList.add('active');
+      
+      // Speak welcome message
+      speak('Selamat datang di kalkulator suara');
+    }
+
+    // Initialize sound toggle
+    if (soundEnabled) {
+      soundToggle.classList.add('active');
+    }
+
+    // Format number with thousand separators and currency symbol
+    function formatNumber(numStr, currency = currentCurrency) {
+      // Remove any existing formatting and currency symbols
+      let cleanNum = numStr.replace(/[^\d.]/g, '');
+      
+      // Check if it's a valid number
+      if (cleanNum === '' || isNaN(cleanNum)) {
+        return numStr;
+      }
+      
+      // Split into integer and decimal parts
+      let parts = cleanNum.split('.');
+      let integerPart = parts[0];
+      let decimalPart = parts.length > 1 ? '.' + parts[1] : '';
+      
+      // Add thousand separators to integer part
+      let formattedInteger = '';
+      for (let i = 0; i < integerPart.length; i++) {
+        if (i > 0 && (integerPart.length - i) % 3 === 0) {
+          formattedInteger += '.';
+        }
+        formattedInteger += integerPart[i];
+      }
+      
+      // Add currency symbol
+      let currencySymbol = "";
+      if (currency === "IDR") {
+        currencySymbol = "IDR ";
+      } else if (currency === "USD") {
+        currencySymbol = "$";
+      } else if (currency === "RM") {
+        currencySymbol = "RM ";
+      }
+      
+      return currencySymbol + formattedInteger + decimalPart;
+    }
+
+    // Remove formatting and currency symbol to get raw number
+    function unformatNumber(formattedNum) {
+      return formattedNum.replace(/[^\d.]/g, '');
+    }
+
+    // Extract currency symbol from formatted number
+    function extractCurrency(formattedNum) {
+      if (formattedNum.includes("IDR")) {
+        return "IDR";
+      } else if (formattedNum.includes("$")) {
+        return "USD";
+      } else if (formattedNum.includes("RM")) {
+        return "RM";
+      }
+      return currentCurrency; // Default to current currency
+    }
+
+    function appendToDisplay(value) {
+      // Reset flag after calculation when user starts typing new number
+      if (isAfterCalculation && (!isNaN(value) || value === '.')) {
+        clearDisplay();
+        isAfterCalculation = false;
+      }
+      
+      // If it's a number or decimal point
+      if (!isNaN(value) || value === '.') {
+        rawDisplayValue += value;
+        display.value = formatNumber(rawDisplayValue, currentCurrency);
+      } else {
+        // For operators and other symbols
+        rawDisplayValue += value;
+        display.value = rawDisplayValue;
+      }
+    }
+
+    function clearDisplay() {
+      display.value = "";
+      rawDisplayValue = "";
+      isAfterCalculation = false;
+    }
+
+    function backspace() {
+      if (rawDisplayValue.length > 0) {
+        rawDisplayValue = rawDisplayValue.slice(0, -1);
+        
+        // If we're after a calculation and backspacing removes everything, clear completely
+        if (isAfterCalculation && rawDisplayValue === "") {
+          clearDisplay();
+          return;
+        }
+        
+        // Check if we need to format the remaining value
+        if (rawDisplayValue === '') {
+          display.value = "";
+        } else if (isNaN(rawDisplayValue.replace(/[^0-9.]/g, ''))) {
+          // If it contains non-numeric characters (like operators), show as is
+          display.value = rawDisplayValue;
+        } else {
+          // If it's a pure number, format it with currency
+          let numericValue = rawDisplayValue.replace(/[^0-9.]/g, '');
+          display.value = formatNumber(numericValue, currentCurrency);
+        }
+      }
+    }
+
+    function calculate() {
+      try {
+        // Get the expression without formatting and currency symbols
+        let expr = rawDisplayValue.replace(/[^\d.+\-*/%()]/g, '');
+        
+        // Replace display value with formatted result
+        let result = eval(expr);
+        
+        // Format the result if it's a number
+        if (!isNaN(result)) {
+          // Handle decimal places properly
+          let resultStr = result.toString();
+          
+          // Check if result is a decimal number
+          if (resultStr.includes('.')) {
+            let decimalParts = resultStr.split('.');
+            let integerPart = decimalParts[0];
+            let decimalPart = decimalParts[1];
+            
+            // Format integer part
+            let formattedInteger = formatNumber(integerPart, currentCurrency);
+            
+            // Combine with decimal part, limiting to 2 decimal places
+            display.value = formattedInteger + '.' + decimalPart.substring(0, 2);
+            
+            // Set rawDisplayValue to only the numeric result (without currency symbols)
+            rawDisplayValue = resultStr;
+          } else {
+            display.value = formatNumber(resultStr, currentCurrency);
+            rawDisplayValue = resultStr;
+          }
+        } else {
+          display.value = result;
+          rawDisplayValue = result;
+        }
+
+        // Add to history with formatted numbers
+        let formattedExpr = expr.replace(/(\d+)/g, match => formatNumber(match, currentCurrency));
+        let formattedResult = display.value;
+        
+        let p = document.createElement("p");
+        p.textContent = formattedExpr + " = " + formattedResult;
+        historyList.appendChild(p);
+        
+        // Set flag to indicate we just did a calculation
+        isAfterCalculation = true;
+      } catch {
+        display.value = "Error";
+        rawDisplayValue = "";
+        isAfterCalculation = true;
+      }
+    }
+
+    function toggleHistory() {
+      historyBox.style.display = (historyBox.style.display === "none") ? "block" : "none";
+    }
+
+    function clearHistory() {
+      historyList.innerHTML = "";
+    }
+
+    // Konversi Uang
+    function convertCurrency() {
+      let from = document.getElementById("from").value;
+      let to = document.getElementById("to").value;
+      
+      // Get the raw value without formatting and currency symbols
+      let amountStr = unformatNumber(rawDisplayValue);
+      let amount = parseFloat(amountStr);
+
+      if (isNaN(amount)) {
+        display.value = "Masukkan angka!";
+        rawDisplayValue = "";
+        isAfterCalculation = true;
+        return;
+      }
+
+      const rates = {
+        IDR: 1,
+        USD: 15000,
+        RM: 3500
+      };
+
+      let inIDR = amount * rates[from];
+      let result = inIDR / rates[to];
+
+      // Update current currency to the target currency
+      currentCurrency = to;
+
+      // Format the result with proper decimal handling
+      let resultStr = result.toString();
+      
+      // Check if result is a decimal number
+      if (resultStr.includes('.')) {
+        let decimalParts = resultStr.split('.');
+        let integerPart = decimalParts[0];
+        let decimalPart = decimalParts[1];
+        
+        // Format integer part
+        let formattedInteger = formatNumber(integerPart, currentCurrency);
+        
+        // Combine with decimal part, limiting to 2 decimal places
+        display.value = formattedInteger + '.' + decimalPart.substring(0, 2);
+        
+        // Set rawDisplayValue to only the numeric result (without currency symbols)
+        rawDisplayValue = resultStr;
+      } else {
+        display.value = formatNumber(resultStr, currentCurrency);
+        rawDisplayValue = resultStr;
+      }
+
+      // Add to history with formatted numbers
+      let p = document.createElement("p");
+      p.textContent = formatNumber(amount.toString(), from) + " = " + display.value;
+      historyList.appendChild(p);
+      
+      // Set flag to indicate we just did a calculation
+      isAfterCalculation = true;
+    }
+    
+    // Music Box Functions
+    function setPlatform(platform) {
+      currentPlatform = platform;
+      
+      // Update active button
+      document.querySelectorAll('.platform-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      // Update placeholder
+      const placeholders = {
+        'spotify': 'Spotify URL',
+        'youtube': 'YouTube URL',
+        'soundcloud': 'SoundCloud URL'
+      };
+      musicUrl.placeholder = placeholders[platform];
+    }
+    
+    function showMusicError(message) {
+      musicError.textContent = message;
+      musicError.style.display = "block";
+      setTimeout(() => {
+        musicError.style.display = "none";
+      }, 3000);
+    }
+    
+    function loadMusic() {
+      const url = musicUrl.value.trim();
+      
+      if (!url) {
+        showMusicError("Please enter a URL");
+        return;
+      }
+      
+      let embedUrl = "";
+      
+      if (currentPlatform === 'spotify') {
+        // Extract track ID from Spotify URL
+        const match = url.match(/spotify\.com\/track\/([a-zA-Z0-9]+)/);
+        if (match && match[1]) {
+          embedUrl = `https://open.spotify.com/embed/track/${match[1]}`;
+        } else {
+          showMusicError("Invalid Spotify URL");
+          return;
+        }
+      } else if (currentPlatform === 'youtube') {
+        // Extract video ID from YouTube URL
+        let match = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]+)/);
+        if (!match) {
+          match = url.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+        }
+        if (match && match[1]) {
+          embedUrl = `https://www.youtube.com/embed/${match[1]}`;
+        } else {
+          showMusicError("Invalid YouTube URL");
+          return;
+        }
+      } else if (currentPlatform === 'soundcloud') {
+        // For SoundCloud, we use the oEmbed API
+        // Note: This is a simplified approach and may not work for all tracks
+        embedUrl = `https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&visual=true`;
+      }
+      
+      // Create iframe
+      musicPlayer.innerHTML = `<iframe src="${embedUrl}" allowfullscreen></iframe>`;
+    }
+    
+    // Text-to-Speech function using Web Speech API
+    function speak(text) {
+      if (!soundEnabled || !soundActivated) return;
+      
+      // Check if browser supports speech synthesis
+      if ('speechSynthesis' in window) {
+        // Cancel any ongoing speech
+        window.speechSynthesis.cancel();
+        
+        // Create a new utterance
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        // Set language to Indonesian
+        utterance.lang = 'id-ID';
+        
+        // Set rate and pitch for better clarity
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        
+        // Speak the text
+        window.speechSynthesis.speak(utterance);
+      } else {
+        // Fallback to Google TTS if Web Speech API is not available
+        console.log("Web Speech API not supported, using fallback");
+        
+        // Create audio element with Google TTS
+        const audio = new Audio();
+        
+        // Use Google Translate TTS service
+        audio.src = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=id&client=tw-ob`;
+        
+        // Play the audio
+        audio.play().catch(e => {
+          console.error("Error playing audio:", e);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
